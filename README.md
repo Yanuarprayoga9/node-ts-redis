@@ -1,13 +1,13 @@
 ![alt text](img/image.png)
 RUN REDIS CONTAINER
-``` json 
+``` sh 
     docker-compose up -d
 ```
 INSTALLING PACKAGE 
-``` json 
+``` sh 
     npm i 
 ```
 RUNNING APP 
-``` json 
+``` sh 
     npm run dev
 ```
