@@ -1,10 +1,20 @@
-import express from "express"
-import dotenv from "dotenv"
-dotenv.configDotenv();
-const {PORT} = process.env
+import express from "express";
+import type { Request, Response } from "express";
+import dotenv from "dotenv";
 
-const app = express()
+// Mengatur dotenv
+dotenv.config();
 
-app.listen(PORT ?? 3000,()=>{
-    console.log(`app running on port ${PORT || 3000}`)
-})
+const { PORT } = process.env;
+
+const app = express();
+
+// Endpoint root
+app.get("/", (req: Request, res: Response) => {
+  res.send("Hello World!");
+});
+
+// Menjalankan server
+app.listen(PORT || 3000, () => {
+  console.log(`App running on port ${PORT || 3000}`);
+});
