@@ -8,7 +8,7 @@ dotenv.config();
 const { PORT } = process.env;
 
 const app = express();
-
+app.use(express.json());
 // Endpoint root
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
