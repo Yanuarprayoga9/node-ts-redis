@@ -170,3 +170,28 @@ RUNNING APP
   - **Update**: 
     // HyperLogLogs tidak memiliki update langsung, tetapi dapat menambah pengguna baru
     ```b
+### Hashes
+- Deskripsi: Tipe data yang memungkinkan Anda menyimpan koleksi pasangan kunci-nilai, ideal untuk menyimpan objek dengan beberapa atribut.
+- Contoh:
+  - **Create**: 
+    ```bash
+    HSET product:1001 name "Laptop" brand "BrandX" price 1500 stock 50
+    ```
+  - **Read**: 
+    - Mendapatkan nilai untuk kunci tertentu:
+      ```bash
+      HGET product:1001 name
+      ```
+    - Mendapatkan semua pasangan kunci-nilai:
+      ```bash
+      HGETALL product:1001
+      ```
+  - **Update**: 
+    ```bash
+    HSET product:1001 price 1400
+    ```
+  - **Delete**: 
+    ```bash
+    HDEL product:1001 stock
+    ```
+
