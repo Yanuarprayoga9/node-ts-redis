@@ -1,49 +1,52 @@
 import express from "express";
-import { RestaurantSchema } from "../schemas/restaurants.js";
 import { validate } from "../middlewares/validate.js";
+import { RestaurantSchema, type Restaurant } from "../schemas/restaurants.js";
 import { initializeRedisClient } from "../utils/client.js";
-import { getKeyByName } from "../utils/keys.js";
-import { nanoid } from "nanoid"; 
+import { nanoid } from "nanoid";
+import {
+  bloomKey,
+  cuisineKey,
+  cuisinesKey,
+  restaurantCuisinesKeyById,
+  restaurantKeyById,
+  restaurantsByRatingKey,
+} from "../utils/keys.js";
+import { errorResponse, successResponse } from "../utils/responses.js";
 
 const router = express.Router();
 
-// Menambahkan restoran
-router.post("/", validate(RestaurantSchema), async (req, res) => {
+router.post("/", validate(RestaurantSchema), async (req, res, next) => {
+  const data = req.body as Restaurant;
+  try {
+    console.log(data);
     const client = await initializeRedisClient();
-
-    // Menggunakan nanoid untuk menghasilkan ID unik
-    const restaurantId = nanoid();
-    const restaurantKey = getKeyByName(`restaurant:${restaurantId}`);
-
-    // Simpan data restoran menggunakan HSET
-    await client.hSet(restaurantKey, {
-        id: restaurantId, // Menyimpan ID yang dihasilkan
-        name: req.body.name,
-        location: req.body.location,
-        cuisines: JSON.stringify(req.body.cuisines), // Menyimpan array sebagai string
-    });
-
-    res.send({ id: restaurantId, name: req.body.name, location: req.body.location, cuisines: req.body.cuisines }); // Kirimkan kembali data yang disimpan
-});
-
-// Mendapatkan restoran berdasarkan ID
-router.get("/:id", async (req, res) => {
-    const client = await initializeRedisClient();
-    const restaurantId = req.params.id; // Mengambil ID dari parameter URL
-    const restaurantKey = getKeyByName(`restaurant:${restaurantId}`);
-
-    // Mengambil data restoran dari Redis
-    const restaurantData = await client.hGetAll(restaurantKey);
-
-    // Cek apakah data restoran ada
-    if (Object.keys(restaurantData).length === 0) {
-        return res.status(404).send({ message: "Restoran tidak ditemukan" });
+    const id = nanoid();
+    const restaurantKey = restaurantKeyById(id);
+    console.log(restaurantKey);
+    const bloomString = `${data.name}:${data.location}`;
+    console.log(bloomString);
+    const seenBefore = await client.bf.exists(bloomKey, bloomString);
+    if (seenBefore) {
+      return errorResponse(res, 409, "restaurant already exists");
     }
-
-    // Mengonversi kembali cuisines dari string ke array
-    restaurantData.cuisines = JSON.parse(restaurantData.cuisines as string);
-
-    res.send(restaurantData); // Kirimkan data restoran
+    const hashData = { id, name: data.name, location: data.location };
+    const cuisines = data.cuisines;
+    Promise.all([
+      ...cuisines.map((cuisine) => {
+        client.sAdd(cuisinesKey, cuisine), client.sAdd(cuisineKey(cuisine), id);
+        client.sAdd(restaurantCuisinesKeyById(id), cuisine);
+        client.hSet(restaurantKey, hashData);
+        client.zAdd(restaurantsByRatingKey, {
+          score: 0,
+          value: id,
+        }),
+          client.bf.add(bloomKey, bloomString);
+      }),
+    ]);
+    return successResponse(res, hashData, "Added new restaurant");
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router;
