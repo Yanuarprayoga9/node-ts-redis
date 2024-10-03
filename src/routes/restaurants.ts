@@ -1,4 +1,5 @@
 import express from "express";
+import {type Request} from "express"
 import { validate } from "../middlewares/validate.js";
 import { RestaurantSchema, type Restaurant } from "../schemas/restaurants.js";
 import { initializeRedisClient } from "../utils/client.js";
@@ -48,5 +49,18 @@ router.post("/", validate(RestaurantSchema), async (req, res, next) => {
     next(error);
   }
 });
+router.get("/:restaurantId",async (req:Request<{restaurantId:string}>,res,next)=>{
+    const {restaurantId} = req.params;
+    try {
+        const client = await initializeRedisClient();
+        const restaurantKey = restaurantKeyById(restaurantId);
+        console.log(restaurantKey)
+        const restaurant = await client.hGetAll(restaurantKey);
+        console.log(restaurant)
+        successResponse(res,restaurant,"restaurant")
+    } catch (error) {
+        next(error)
+    }
+})
 
 export default router;

@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import dotenv from "dotenv";
 import cuisinesRouter from "./routes/cuisines.js";
 import restaurantRouter from "./routes/restaurants.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
 
 // Mengatur dotenv
 dotenv.config();
@@ -17,6 +18,7 @@ app.use("/restaurant", restaurantRouter);
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
 });
+app.use(errorHandler);
 
 // Menjalankan server
 app.listen(PORT || 3000, () => {
